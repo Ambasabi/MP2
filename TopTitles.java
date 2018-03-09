@@ -125,10 +125,11 @@ public class TopTitles extends Configured implements Tool {
         @Override
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             //TODO
-	        String line = value.toString();
-      	    StringTokenizer tokenizer = new StringTokenizer(line, " \t,;.?!-:@[](){}_*/");
+	        String line = value.toString().toLowerCase();
+      	    StringTokenizer tokenizer = new StringTokenizer(line, delimiters);
             while (tokenizer.hasMoreTokens()) {
                 String nextToken = tokenizer.nextToken();
+		nextToken = nextToken.trim().toLowerCase();
                 if (!stopWords.contains(nextToken.trim().toLowerCase())){
                     context.write(new Text(nextToken), new IntWritable(1));
                 }
@@ -144,7 +145,8 @@ public class TopTitles extends Configured implements Tool {
             for (IntWritable val : values) {
                 sum += val.get();
             }
-            context.write(key, new IntWritable(sum));
+		result.set(sum);
+            context.write(key, result);
         }
     }
 
@@ -160,7 +162,7 @@ public class TopTitles extends Configured implements Tool {
         public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
             //TODO
 	        Integer count = Integer.parseInt(value.toString());
-	        String word = key.toString();
+	        String word = key.toString().toLowerCase();
         
 	        countToWordMap.add(new Pair<Integer, String>(count, word));
 	        if (countToWordMap.size() > 10) {
