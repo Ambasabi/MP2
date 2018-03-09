@@ -125,6 +125,15 @@ public class TopTitles extends Configured implements Tool {
         @Override
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             //TODO
+	    String line = value.toString();
+      	    StringTokenizer tokenizer = new StringTokenizer(line, " \t,;.?!-:@[](){}_*/");
+            while (tokenizer.hasMoreTokens()) {
+                String nextToken = tokenizer.nextToken();
+                word.set(nextToken);
+                if (!commonWords.contains(nextToken.trim().toLowerCase())){
+                    context.write(new Text(nextToken), new IntWritable(1));
+                }
+            }
         }
     }
 
@@ -132,6 +141,12 @@ public class TopTitles extends Configured implements Tool {
         @Override
         public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             //TODO
+            int sum = 0;
+            for (IntWritable val : values) {
+                sum += val.get();
+            }
+            result.set(sum);
+            context.write(key, result);
         }
     }
 
@@ -146,11 +161,21 @@ public class TopTitles extends Configured implements Tool {
         @Override
         public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
             //TODO
-        }
-
+	    Integer count = Integer.parseInt(value.toString());
+	    String word = key.toString();
+            countToWordMap.add(new Pair<Integer, String>(count, word));
+	    if (countToWordMap.size() > 10) {
+	        countToWordMap.remove(countToWordMap.first());
+	    }
+	}
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
             //TODO
+	    for (Pair<Integer, String> item : countToWordMap) {
+	        String[] strings = {item.second, item.first.toString()};
+		TextArrayWritable val = new TextArrayWritable(strings);
+	        context.write(NullWritable.get(), val);
+	    }
         }
     }
 
@@ -165,6 +190,12 @@ public class TopTitles extends Configured implements Tool {
         @Override
         public void reduce(NullWritable key, Iterable<TextArrayWritable> values, Context context) throws IOException, InterruptedException {
             //TODO
+            int sum = 0;
+            for (IntWritable val : values) {
+                sum += val.get();
+            }
+            result.set(sum);
+            context.write(key, result);
         }
     }
 }
