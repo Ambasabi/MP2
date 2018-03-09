@@ -129,8 +129,7 @@ public class TopTitles extends Configured implements Tool {
       	    StringTokenizer tokenizer = new StringTokenizer(line, " \t,;.?!-:@[](){}_*/");
             while (tokenizer.hasMoreTokens()) {
                 String nextToken = tokenizer.nextToken();
-                word.set(nextToken);
-                if (!commonWords.contains(nextToken.trim().toLowerCase())){
+                if (!stopWords.contains(nextToken.trim().toLowerCase())){
                     context.write(new Text(nextToken), new IntWritable(1));
                 }
             }
@@ -145,14 +144,13 @@ public class TopTitles extends Configured implements Tool {
             for (IntWritable val : values) {
                 sum += val.get();
             }
-            result.set(sum);
-            context.write(key, result);
+            context.write(key, new IntWritable(sum));
         }
     }
 
     public static class TopTitlesMap extends Mapper<Text, Text, NullWritable, TextArrayWritable> {
         //TODO
-
+	private TreeSet<Pair<Integer, String>> countToWordMap = new TreeSet<Pair<Integer, String>>();
         @Override
         protected void setup(Context context) throws IOException,InterruptedException {
             Configuration conf = context.getConfiguration();
@@ -163,7 +161,8 @@ public class TopTitles extends Configured implements Tool {
             //TODO
 	    Integer count = Integer.parseInt(value.toString());
 	    String word = key.toString();
-            countToWordMap.add(new Pair<Integer, String>(count, word));
+        
+	    countToWordMap.add(new Pair<Integer, String>(count, word));
 	    if (countToWordMap.size() > 10) {
 	        countToWordMap.remove(countToWordMap.first());
 	    }
@@ -181,7 +180,7 @@ public class TopTitles extends Configured implements Tool {
 
     public static class TopTitlesReduce extends Reducer<NullWritable, TextArrayWritable, Text, IntWritable> {
         // TODO
-
+	private TreeSet<Pair<Integer, String>> countToWordMap = new TreeSet<Pair<Integer, String>>();
         @Override
         protected void setup(Context context) throws IOException,InterruptedException {
             Configuration conf = context.getConfiguration();
@@ -190,12 +189,22 @@ public class TopTitles extends Configured implements Tool {
         @Override
         public void reduce(NullWritable key, Iterable<TextArrayWritable> values, Context context) throws IOException, InterruptedException {
             //TODO
-            int sum = 0;
-            for (IntWritable val : values) {
-                sum += val.get();
-            }
-            result.set(sum);
-            context.write(key, result);
+	    for (TextArrayWritable val : values) {
+	    	Text[] pair = (Text[]) val.toArray();
+		String word = pair[0].toString();
+		Integer count = Integer.parseInt(pair[1].toString());
+
+		countToWordMap.add(new Pair<Integer, String>(count, word));
+		if (countToWordMap.size() > 10) {
+			countToWordMap.remove(countToWordMap.first());
+		}
+	    }
+
+	    for (Pair<Integer, String> item : countToWordMap) {
+		Text word = new Text(item.second);
+		IntWritable value = new IntWritable(item.first);
+		context.write(word, value);
+	    }
         }
     }
 }
