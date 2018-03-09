@@ -129,7 +129,7 @@ public class TopTitles extends Configured implements Tool {
       	    StringTokenizer tokenizer = new StringTokenizer(line, delimiters);
             while (tokenizer.hasMoreTokens()) {
                 String nextToken = tokenizer.nextToken();
-		nextToken = nextToken.trim().toLowerCase();
+		        nextToken = nextToken.trim().toLowerCase();
                 if (!stopWords.contains(nextToken.trim().toLowerCase())){
                     context.write(new Text(nextToken), new IntWritable(1));
                 }
@@ -145,7 +145,7 @@ public class TopTitles extends Configured implements Tool {
             for (IntWritable val : values) {
                 sum += val.get();
             }
-		result.set(sum);
+		    result.set(sum);
             context.write(key, result);
         }
     }
