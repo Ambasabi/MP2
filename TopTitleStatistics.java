@@ -140,14 +140,14 @@ public class TopTitleStatistics extends Configured implements Tool {
     }
 
     public static class TitleCountReduce extends Reducer<Text, IntWritable, Text, IntWritable> {
-        @Override
+        private IntWritable result = new IntWritable();
         public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             //TODO
             int sum = 0;
             for (IntWritable val : values) {
                 sum += val.get();
             }
-            result.set(sum);
+		result.set(sum);
             context.write(key, result);
         }
     }
@@ -194,11 +194,34 @@ public class TopTitleStatistics extends Configured implements Tool {
         @Override
         public void reduce(NullWritable key, Iterable<TextArrayWritable> values, Context context) throws IOException, InterruptedException {
             Integer sum, mean, max, min, var;
+	//	int[] arr = new int[values.getlength()];
             //TODO
+		min = 0;
+		mean = 0;
+		sum = 0;
+		max = 0;
+		var = 0;
+		int i=0;
+		int temp = 0;
             for (TextArrayWritable val : values) {
                 Text[] pair = (Text[]) val.toArray();
                 String word = pair[0].toString();
                 Integer count = Integer.parseInt(pair[1].toString());
+		sum += count;
+		if (min == 0){
+			min = count;
+		}
+		if (max == 0){
+			max = count;
+		}
+		if (count < min) {
+			min = count;
+		}
+		else if (count > max) {
+			max = count;
+		}
+	//	arr[i] = count;
+		i += 1;
 
                 countToWordMap.add(new Pair<Integer, String>(count, word));
                 if (countToWordMap.size() > 10) {
@@ -211,6 +234,11 @@ public class TopTitleStatistics extends Configured implements Tool {
                 IntWritable value = new IntWritable(item.first);
                 context.write(word, value);
             }
+	//	mean = sum / values.length;
+//		for (int a : arr){
+//			var += (a-mean)*(a-mean);
+//		}
+//		var = var/values.length;
             context.write(new Text("Mean"), new IntWritable(mean));
             context.write(new Text("Sum"), new IntWritable(sum));
             context.write(new Text("Min"), new IntWritable(min));

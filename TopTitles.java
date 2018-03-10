@@ -138,6 +138,7 @@ public class TopTitles extends Configured implements Tool {
     }
 
     public static class TitleCountReduce extends Reducer<Text, IntWritable, Text, IntWritable> {
+	private IntWritable result = new IntWritable();
         @Override
         public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             //TODO
